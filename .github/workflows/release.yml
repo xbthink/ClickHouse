@@ -1,0 +1,35 @@
+name: ReleaseWorkflow
+# - Gets artifacts from S3
+# - Sends it to JFROG Artifactory
+# - Adds them to the release assets
+
+on:
+  release:
+    types:
+    - published
+
+jobs:
+  ReleasePublish:
+    # for some reason, regexp can't handle dots at all, so we'll check that release ends with a proper suffix
+    if: ${{ /\d+-(testing|prestable|stable|lts)$/.test(github.ref) }}
+    env:
+      TEMP_PATH: ${{runner.temp}}/release_packages
+      RELEASE_NAME: ${{ github.ref.replace("refs/tags/", "") }}
+    runs-on: [self-hosted, style-checker]
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v2
+      - name: Download packages and push to Artifactory
+        env:
+          JFROG_API_KEY: ${{ secrets.JFROG_KEY_API_PACKAGES }}
+        run: |
+          rm -rf "$TEMP_PATH" && mkdir -p "$TEMP_PATH"
+          python3 ./tests/ci/push_to_artifactory.py --release "$RELEASE_NAME" \
+          --commit '${{ github.sha }}' --all
+      - name: Upload packages to release assets
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          overwrite: true
+          tag: ${{ env.RELEASE_NAME }}
+          file_glob: ${{runner.temp}}/release_packages/*
