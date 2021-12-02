@@ -10,8 +10,6 @@ on:
 
 jobs:
   ReleasePublish:
-    # for some reason, regexp can't handle dots at all, so we'll check that release ends with a proper suffix
-    if: ${{ /\d+-(testing|prestable|stable|lts)$/.test(github.ref) }}
     env:
       TEMP_PATH: ${{runner.temp}}/release_packages
       RELEASE_NAME: ${{ github.ref.replace("refs/tags/", "") }}
