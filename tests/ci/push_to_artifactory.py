@@ -120,6 +120,8 @@ class S3:
 class Release:
     def __init__(self, name: str) -> str:
         r = re.compile(r"^v\d{2}[.]\d+[.]\d+[.]\d+-(testing|prestable|stable|lts)$")
+        # Automatically remove refs/tags/ if full refname passed here
+        name = removeprefix(name, "refs/tags/")
         if not r.match(name):
             raise argparse.ArgumentTypeError(
                 f"release name {name} does not match "
@@ -212,7 +214,8 @@ def parse_args() -> argparse.Namespace:
         "--release",
         required=True,
         type=Release,
-        help="release name, e.g. v12.13.14.15-prestable",
+        help="release name, e.g. v12.13.14.15-prestable; 'refs/tags/' "
+        "prefix is striped automatically",
     )
     parser.add_argument(
         "--pull-request",
