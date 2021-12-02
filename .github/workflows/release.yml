@@ -10,8 +10,6 @@ on:
 
 jobs:
   ReleasePublish:
-    env:
-      RELEASE_NAME: ${{ github.ref.replace("refs/tags/", "") }}
     runs-on: [self-hosted, style-checker]
     steps:
       - name: Check out repository code
@@ -22,12 +20,12 @@ jobs:
           TEMP_PATH: ${{runner.temp}}/release_packages
         run: |
           rm -rf "$TEMP_PATH" && mkdir -p "$TEMP_PATH"
-          python3 ./tests/ci/push_to_artifactory.py --release "$RELEASE_NAME" \
+          python3 ./tests/ci/push_to_artifactory.py --release "${{ github.ref }}" \
           --commit '${{ github.sha }}' --all
       - name: Upload packages to release assets
         uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           overwrite: true
-          tag: ${{ env.RELEASE_NAME }}
+          tag: ${{ github.ref }}
           file_glob: ${{runner.temp}}/release_packages/*
